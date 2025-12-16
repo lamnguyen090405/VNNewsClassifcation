@@ -6,248 +6,242 @@
     <title>AI Phân Loại Báo Chí</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        /* --- 1. SETUP & BACKGROUND --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
-
-        body {
-            /* Giữ màu xanh dương bạn thích */
-            background: linear-gradient(135deg, #00c6ff, #0072ff); 
-            min-height: 100vh;
-            display: flex; justify-content: center; align-items: center; padding: 20px;
-            overflow-y: auto; position: relative;
-        }
-
-        /* --- BACKGROUND ANIMATION (HÌNH TRÒN BAY) --- */
-        .circles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 0; }
-        .circles li {
-            position: absolute; display: block; list-style: none;
-            width: 20px; height: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            animation: animate 25s linear infinite;
-            bottom: -150px; border-radius: 50%;
-        }
-        .circles li:nth-child(1) { left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
-        .circles li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
-        .circles li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
-        /* ... (Các li khác giữ nguyên config cũ nếu muốn) ... */
-        @keyframes animate {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; }
-        }
-
-        /* --- 2. CARD CHÍNH --- */
-        .card {
-            background: #fff; /* Nền trắng sạch như trong ảnh */
-            width: 100%; max-width: 550px;
-            padding: 40px 40px 50px 40px; /* Thêm padding đáy */
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 78, 146, 0.25);
-            position: relative; 
-            z-index: 1; 
-            overflow: hidden; /* QUAN TRỌNG: Để cắt phần hình tròn trang trí thừa */
-        }
-
-        /* --- TẠO HÌNH TRÒN MÀU XANH NHẠT Ở GÓC TRÁI (GIỐNG ẢNH) --- */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: -60px; /* Đẩy lên trên */
-            left: -60px; /* Đẩy sang trái */
-            width: 180px; 
-            height: 180px;
-            background: #e1f3ff; /* Màu xanh nhạt giống ảnh */
-            border-radius: 50%; /* Bo tròn */
-            z-index: 0; /* Nằm dưới chữ */
-        }
-
-        /* --- HEADER TITLE --- */
-        .header-title {
-            position: relative;
-            z-index: 1; /* Nổi lên trên hình tròn trang trí */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px; /* Khoảng cách giữa icon và chữ */
-            margin-bottom: 40px;
-        }
-
-        .header-title i {
-            font-size: 32px;
-            color: #0066ff; /* Màu xanh đậm của Icon */
-        }
-
-        .header-title h1 {
-            color: #0066ff; /* Màu xanh đậm của Chữ */
-            font-size: 28px;
-            font-weight: 800; /* Chữ đậm */
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 0; /* Reset margin mặc định của h1 */
-        }
-
-        /* --- 3. INPUTS --- */
-        .input-group { margin-bottom: 25px; position: relative; z-index: 1; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
-        
-        input, textarea {
-            width: 100%; padding: 14px 16px;
-            border: 2px solid #eef2f6; border-radius: 12px;
-            font-size: 15px; outline: none; transition: 0.3s;
-            background: #f8fbfe; color: #333;
-        }
-        textarea { resize: vertical; min-height: 130px; }
-
-        input:focus, textarea:focus {
-            border-color: #0066ff;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
-        }
-
-        /* --- 4. BUTTON --- */
-        button {
-            width: 100%; padding: 16px; border: none; border-radius: 50px;
-            background: #0066ff; /* Màu xanh phẳng, đậm */
-            color: white; font-size: 16px; font-weight: 700; text-transform: uppercase;
-            cursor: pointer; transition: 0.3s;
-            box-shadow: 0 8px 20px rgba(0, 102, 255, 0.25);
-            position: relative; z-index: 1;
-        }
-        button:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(0, 102, 255, 0.35); }
-        
-        /* --- 5. RESULT & TAGS --- */
-        #result-area { margin-top: 30px; display: none; text-align: center; animation: slideDown 0.4s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .result-box {
-            background: #f0f7ff; padding: 25px; border-radius: 16px;
-            border: 1px solid #cce4ff;
-        }
-        .result-label { font-size: 13px; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .result-value { font-size: 28px; font-weight: 900; color: #0066ff; margin-bottom: 5px; }
-        .confidence { font-size: 13px; font-weight: 600; color: #0066ff; background: #dbeafe; padding: 5px 12px; border-radius: 20px; display: inline-block; }
-
-        /* Keywords */
-        .keywords-area { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #dbeafe; }
-        .kw-title { font-size: 12px; color: #8898aa; margin-bottom: 10px; font-weight: 500; }
-        .tag-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-        .tag {
-            background: #fff; color: #0066ff; padding: 6px 14px; border-radius: 50px;
-            font-size: 12px; font-weight: 600; border: 1px solid #b3d7ff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
-
-        /* Spinner */
-        .spinner { display: none; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    <link rel="stylesheet" href="/styles/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-    <ul class="circles">
-        <li></li><li></li><li></li><li></li><li></li>
-        <li></li><li></li><li></li><li></li><li></li>
-    </ul>
-
-    <div class="card">
-        <div class="header-title">
-            <i class="fas fa-newspaper"></i>
-            <h1>Phân Loại Tin Tức</h1>
+    <ul class="circles"><li></li><li></li><li></li><li></li><li></li></ul>
+    <div class="card" id="mainCard">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('main')"><i class="fas fa-home"></i> Nhập Liệu</button>
+            <button class="tab-btn" onclick="switchTab('viz')"><i class="fas fa-chart-pie"></i> Trực Quan Hóa</button>
         </div>
-        
-        <form id="newsForm">
-            <div class="input-group">
-                <label>Tiêu Đề Bài Viết</label>
-                <input type="text" id="title" placeholder="Ví dụ: Đội tuyển Việt Nam vô địch..." required autocomplete="off">
-            </div>
 
-            <div class="input-group">
-                <label>Nội Dung Chi Tiết</label>
-                <textarea id="content" placeholder="Paste nội dung bài báo vào đây..." required></textarea>
-            </div>
-
-            <button type="submit" id="btnPredict">
-                <span class="spinner" id="loadingSpinner"></span>
-                <span id="btnText">Phân Loại Ngay</span>
-            </button>
-        </form>
-
-        <div id="result-area">
-            <div class="result-box">
-                <div class="result-label">AI Dự đoán chủ đề:</div>
-                <div class="result-value" id="resultLabel">...</div>
-                <div class="confidence" id="confidenceLabel">...</div>
-
-                <div class="keywords-area" id="keywordsArea" style="display: none;">
-                    <div class="kw-title">TỪ KHÓA NHẬN DIỆN</div>
+        <div id="tab-main" class="tab-content active">
+            <div class="header-title"><i class="fas fa-newspaper"></i><h1>Phân Loại Tin Tức</h1></div>
+            <form id="newsForm">
+                <div class="input-group">
+                    <label>Tiêu Đề Bài Viết</label>
+                    <input type="text" id="title" placeholder="Ví dụ: Đội tuyển Việt Nam vô địch..." required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>Nội Dung Chi Tiết</label>
+                    <textarea id="content" placeholder="Paste nội dung bài báo vào đây..." required></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="button" id="btnReset" onclick="resetApp()"><i class="fas fa-redo"></i> Làm Mới</button>
+                    <button type="submit" id="btnPredict">
+                        <span class="spinner" id="loadingSpinner"></span><span id="btnText">Phân Loại Ngay</span>
+                    </button>
+                </div>
+            </form>
+            <div id="result-area">
+                <div class="result-box">
+                    <div class="result-label">AI Dự đoán chủ đề:</div>
+                    <div class="result-value" id="resultLabel">...</div>
+                    <div class="confidence" id="confidenceLabel">...</div>
                     <div class="tag-container" id="tagContainer"></div>
                 </div>
+            </div>
+        </div>
+
+        <div id="tab-viz" class="tab-content">
+            <div id="viz-content" style="display: none;">
+                <div class="stats-row">
+                    <div class="stat-card"><span class="stat-val" id="stat-words">0</span><span class="stat-lbl">Số từ</span></div>
+                    <div class="stat-card"><span class="stat-val" id="stat-sents">0</span><span class="stat-lbl">Số câu</span></div>
+                    <div class="stat-card"><span class="stat-val" id="stat-len">0</span><span class="stat-lbl">TB từ/câu</span></div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="viz-card">
+                        <div class="viz-title">XÁC SUẤT CHỦ ĐỀ</div>
+                        <div class="chart-box"><canvas id="probChart"></canvas></div>
+                    </div>
+                    <div class="viz-card">
+                        <div class="viz-title">TẦN SUẤT TỪ KHÓA</div>
+                        <div class="chart-box"><canvas id="freqChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="viz-card" style="grid-column: span 2;">
+                        <div class="viz-title">ĐỘ TƯƠNG QUAN TỪ KHÓA</div>
+                        <p style="font-size: 12px; color:#777; margin-bottom:10px;">Biểu đồ thể hiện mức độ xuất hiện cùng nhau của Top 5 từ khóa trong các câu văn.</p>
+                        <div id="heatmapContainer"></div>
+                    </div>
+                </div>
+                <div class="viz-card">
+                    <div class="viz-title">PHÂN TÍCH VĂN BẢN</div>
+                    <div class="highlight-box" id="highlightContent"></div>
+                </div>
+            </div>
+            <div id="viz-empty" class="empty-state">
+                <i class="fas fa-robot" style="font-size: 50px; margin-bottom: 20px; display:block; color:#ddd;"></i>
+                Vui lòng phân loại ở tab "Nhập Liệu" trước để xem Dashboard.
             </div>
         </div>
     </div>
 
     <script>
+        let probChart = null;
+        let freqChart = null; 
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const card = document.getElementById('mainCard');
+            if (tabName === 'main') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('tab-main').classList.add('active');
+                card.classList.remove('wide-mode'); 
+            } else {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('tab-viz').classList.add('active');
+                card.classList.add('wide-mode'); 
+            }
+        }
+
+        function resetApp() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('result-area').style.display = 'none';
+            document.getElementById('viz-content').style.display = 'none';
+            document.getElementById('viz-empty').style.display = 'block';
+            if (probChart) probChart.destroy();
+            if (freqChart) freqChart.destroy();
+            probChart = null; freqChart = null;
+            switchTab('main');
+        }
+
+        function renderHeatmap(labels, matrix) {
+            const container = document.getElementById('heatmapContainer');
+            if (!labels || labels.length === 0 || !matrix) {
+                container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">Không đủ dữ liệu.</p>';
+                return;
+            }
+            const colCount = labels.length;
+            let html = `<div class="heatmap-grid" style="grid-template-columns: 80px repeat(${colCount}, 1fr);">`;
+            html += '<div class="hm-header"></div>'; 
+            labels.forEach(l => html += `<div class="hm-header" style="font-size:10px;">${l}</div>`);
+
+            let maxVal = 0;
+            matrix.forEach(row => row.forEach(val => { if(val > maxVal) maxVal = val; }));
+            if (maxVal === 0) maxVal = 1;
+
+            matrix.forEach((row, i) => {
+                html += `<div class="hm-label" style="font-size:10px;">${labels[i]}</div>`;
+                row.forEach(val => {
+                    let opacity = (val / maxVal).toFixed(2);
+                    let bgColor = `rgba(0, 102, 255, ${Math.max(0.1, opacity)})`; 
+                    let textColor = opacity > 0.6 ? '#fff' : '#333';
+                    html += `<div class="hm-cell" style="background:${bgColor}; color:${textColor}" title="${val}">${val}</div>`;
+                });
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
         document.getElementById('newsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const btn = document.getElementById('btnPredict');
-            const btnText = document.getElementById('btnText');
             const spinner = document.getElementById('loadingSpinner');
             const resultArea = document.getElementById('result-area');
-            const resultLabel = document.getElementById('resultLabel');
-            const confidenceLabel = document.getElementById('confidenceLabel');
-            const keywordsArea = document.getElementById('keywordsArea');
             const tagContainer = document.getElementById('tagContainer');
+            
+            const titleInput = document.getElementById('title').value;
+            const contentInput = document.getElementById('content').value;
 
-            btn.disabled = true;
-            spinner.style.display = 'inline-block';
-            btnText.innerText = 'Đang Xử Lý...';
-            resultArea.style.display = 'none';
-            tagContainer.innerHTML = '';
-
-            const payload = {
-                title: document.getElementById('title').value,
-                content: document.getElementById('content').value
-            };
+            btn.disabled = true; spinner.style.display = 'inline-block'; 
+            document.getElementById('btnText').innerText = 'Đang Xử Lý...';
+            resultArea.style.display = 'none'; tagContainer.innerHTML = '';
 
             try {
-                await new Promise(r => setTimeout(r, 600));
-
                 const response = await fetch('/predict', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ title: titleInput, content: contentInput })
                 });
-
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    resultLabel.innerText = data.prediction;
-                    confidenceLabel.innerText = "Độ tin cậy: " + data.confidence;
-                    
-                    if (data.keywords && data.keywords.length > 0) {
-                        data.keywords.forEach(word => {
-                            const span = document.createElement('span');
-                            span.className = 'tag';
-                            span.innerText = word;
-                            tagContainer.appendChild(span);
+                    document.getElementById('resultLabel').innerText = data.prediction;
+                    document.getElementById('confidenceLabel').innerText = "Độ tin cậy: " + data.confidence;
+                    if (data.display_keywords) {
+                        data.display_keywords.forEach(word => {
+                            tagContainer.innerHTML += `<span class="tag">${word}</span>`;
                         });
-                        keywordsArea.style.display = 'block';
-                    } else {
-                        keywordsArea.style.display = 'none';
                     }
                     resultArea.style.display = 'block';
+
+                    document.getElementById('viz-empty').style.display = 'none';
+                    document.getElementById('viz-content').style.display = 'block';
+
+                    const wordCount = contentInput.trim().split(/\s+/).length;
+                    document.getElementById('stat-words').innerText = wordCount;
+                    document.getElementById('stat-sents').innerText = data.sentence_count;
+                    document.getElementById('stat-len').innerText = data.avg_sent_len;
+
+                    let highlightedText = contentInput;
+                    data.keywords.forEach(word => {
+                        let searchWord = word.replace(/_/g, ' '); 
+                        let regex = new RegExp(`(${searchWord})`, 'gi');
+                        highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+                    });
+                    document.getElementById('highlightContent').innerHTML = highlightedText;
+
+                    if (data.heatmap_matrix && data.heatmap_labels) {
+                        renderHeatmap(data.heatmap_labels, data.heatmap_matrix);
+                    }
+
+                    const ctxProb = document.getElementById('probChart').getContext('2d');
+                    if (probChart) probChart.destroy();
+                    probChart = new Chart(ctxProb, {
+                        type: 'bar',
+                        data: {
+                            labels: data.prob_chart_data.map(d => d.label),
+                            datasets: [{
+                                label: 'Xác suất (%)',
+                                data: data.prob_chart_data.map(d => d.prob),
+                                backgroundColor: ['#0066ff', '#5c9dff', '#a3caff'],
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { x: { display:false }, y: { grid: {display:false} } }
+                        }
+                    });
+
+                    const ctxFreq = document.getElementById('freqChart').getContext('2d');
+                    if (freqChart) freqChart.destroy();
+                    freqChart = new Chart(ctxFreq, {
+                        type: 'bar',
+                        data: {
+                            labels: data.freq_chart_data.map(d => d.word),
+                            datasets: [{
+                                label: 'Số lần xuất hiện',
+                                data: data.freq_chart_data.map(d => d.count),
+                                backgroundColor: '#10b981', 
+                                borderRadius: 4,
+                                barPercentage: 0.6
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { x: { display:false }, y: { grid: {display:false} } }
+                        }
+                    });
+
                 } else {
                     alert('Lỗi: ' + data.message);
                 }
             } catch (error) {
                 console.error(error);
-                alert('Mất kết nối tới Server!');
+                alert('Mất kết nối Server!');
             } finally {
-                btn.disabled = false;
-                spinner.style.display = 'none';
-                btnText.innerText = 'Phân Loại Ngay';
+                btn.disabled = false; spinner.style.display = 'none'; 
+                document.getElementById('btnText').innerText = 'Phân Loại Ngay';
             }
         });
     </script>
